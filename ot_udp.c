@@ -20,7 +20,9 @@
 #include "ot_stats.h"
 #include "ot_rijndael.h"
 
+#if 0
 static const uint8_t g_static_connid[8] = { 0x23, 0x42, 0x05, 0x17, 0xde, 0x41, 0x50, 0xff };
+#endif
 static uint32_t g_rijndael_round_key[44] = {0};
 static uint32_t g_key_of_the_hour[2] = {0};
 static ot_time  g_hour_of_the_key;
@@ -61,6 +63,7 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
   uint32_t   *outpacket = (uint32_t*)ws->outbuf;
   uint32_t    numwant, left, event, scopeid;
   uint32_t    connid[2];
+  uint32_t    action;
   uint16_t    port, remoteport;
   size_t      byte_count, scrape_count;
 
@@ -74,6 +77,11 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
   if( byte_count < 16 )
     return 1;
 
+  /* Get action to take. Ignore error messages and broken packets */
+  action = ntohl( inpacket[2] );
+  if( action > 2 )
+    return 1;
+
   /* Generate the connection id we give out and expect to and from
      the requesting ip address, this prevents udp spoofing */
   udp_make_connectionid( connid, remoteip, 0 );
@@ -82,16 +90,16 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
   ws->hash = NULL;
   ws->peer_id = NULL;
 
-  /* If action is not a ntohl(a) == a == 0, then we
-     expect the derived connection id in first 64 bit */
-  if( inpacket[2] && ( inpacket[0] != connid[0] || inpacket[1] != connid[1] ) ) {
+  /* If action is not 0 (connect), then we expect the derived
+     connection id in first 64 bit */
+  if( ( action > 0 ) && ( inpacket[0] != connid[0] || inpacket[1] != connid[1] ) ) {
     /* If connection id does not match, try the one that was
        valid in the previous hour. Only if this also does not
        match, return an error packet */
     udp_make_connectionid( connid, remoteip, 1 );
     if( inpacket[0] != connid[0] || inpacket[1] != connid[1] ) {
       const size_t s = sizeof( "Connection ID missmatch." );
-      outpacket[0] = 3; outpacket[1] = inpacket[3];
+      outpacket[0] = htonl( 3 ); outpacket[1] = inpacket[3];
       memcpy( &outpacket[2], "Connection ID missmatch.", s );
       socket_send6( serversocket, ws->outbuf, 8 + s, remoteip, remoteport, 0 );
       stats_issue_event( EVENT_CONNID_MISSMATCH, FLAG_UDP, 8 + s );
@@ -99,7 +107,7 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
     }
   }
 
-  switch( ntohl( inpacket[2] ) ) {
+  switch( action ) {
     case 0: /* This is a connect action */
       /* look for udp bittorrent magic id */
       if( (ntohl(inpacket[0]) != 0x00000417) || (ntohl(inpacket[1]) != 0x27101980) )
@@ -121,6 +129,7 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
       /* We do only want to know, if it is zero */
       left  = inpacket[64/4] | inpacket[68/4];
 
+      /* Limit amount of peers to 200 */
       numwant = ntohl( inpacket[92/4] );
       if (numwant > 200) numwant = 200;
 
