@@ -511,8 +511,9 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
   numwants[numwant]++;
 #endif
 
-  /* XXX DEBUG */
+  /* XXX DEBUG
   stats_issue_event( EVENT_ACCEPT, FLAG_TCP, (uintptr_t)ws->reply );
+  */
 
   /* Scanned whole query string */
   if( !ws->hash )
