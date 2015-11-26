@@ -679,6 +679,7 @@ void stats_issue_event( ot_status_event event, PROTO_FLAG proto, uintptr_t event
       break;
     case EVENT_SCRAPE:
       if( proto == FLAG_TCP ) ot_overall_tcp_successfulscrapes++; else ot_overall_udp_successfulscrapes++;
+      break;
     case EVENT_FULLSCRAPE:
       ot_full_scrape_count++;
       ot_full_scrape_size += event_data;
