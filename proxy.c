@@ -715,8 +715,7 @@ unlock_continue:
             void *tmp = malloc( mem );
             if( tmp ) {
               memcpy( tmp, ptr, mem );
-              if( !iob_addbuf_free( &g_connections[i].outdata, tmp, mem ) )
-                free( tmp );
+              iob_addbuf_free( &g_connections[i].outdata, tmp, mem );
               io_wantwrite( g_connections[i].fd );
             }
           }
