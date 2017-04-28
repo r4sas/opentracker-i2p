@@ -48,6 +48,7 @@ static char * g_serverdir;
 static char * g_serveruser;
 static unsigned int g_udp_workers;
 
+static void panic( const char *routing ) __attribute__ ((noreturn));
 static void panic( const char *routine ) {
   fprintf( stderr, "%s: %s\n", routine, strerror(errno) );
   exit( 111 );

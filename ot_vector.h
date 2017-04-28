@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_VECTOR_H__
-#define __OT_VECTOR_H__
+#ifndef OT_VECTOR_H__
+#define OT_VECTOR_H__
 
 /* These defines control vectors behaviour */
 #define OT_VECTOR_MIN_MEMBERS   2

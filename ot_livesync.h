@@ -3,8 +3,8 @@
 
  $id$ */
 
-#ifndef __OT_LIVESYNC_H__
-#define __OT_LIVESYNC_H__
+#ifndef OT_LIVESYNC_H__
+#define OT_LIVESYNC_H__
 
 #include "io.h"
 #include "trackerlogic.h"

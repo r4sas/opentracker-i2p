@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_SYNC_H__
-#define __OT_SYNC_H__
+#ifndef OT_SYNC_H__
+#define OT_SYNC_H__
 
 #ifdef WANT_SYNC_BATCH
 enum { SYNC_IN, SYNC_OUT };

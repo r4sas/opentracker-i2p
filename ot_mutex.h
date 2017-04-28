@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_MUTEX_H__
-#define __OT_MUTEX_H__
+#ifndef OT_MUTEX_H__
+#define OT_MUTEX_H__
 
 #include <sys/uio.h>
 

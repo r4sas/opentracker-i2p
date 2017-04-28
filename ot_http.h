@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_HTTP_H__
-#define __OT_HTTP_H__
+#ifndef OT_HTTP_H__
+#define OT_HTTP_H__
 
 typedef enum {
   STRUCT_HTTP_FLAG_WAITINGFORTASK = 1,

@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_FULLSCRAPE_H__
-#define __OT_FULLSCRAPE_H__
+#ifndef OT_FULLSCRAPE_H__
+#define OT_FULLSCRAPE_H__
 
 #ifdef WANT_FULLSCRAPE
 

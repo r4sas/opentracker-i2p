@@ -9,12 +9,14 @@
 
    $id$ */
 
-#ifndef __OT_RIJNDAEL_H__
-#define __OT_RIJNDAEL_H__
+#ifndef OT_RIJNDAEL_H__
+#define OT_RIJNDAEL_H__
 
 #include <stdint.h>
 
 int rijndaelKeySetupEnc128(uint32_t rk[44], const uint8_t cipherKey[] );
 void rijndaelEncrypt128(const uint32_t rk[44], const uint8_t pt[16], uint8_t ct[16]);
+
+extern const char *g_version_rijndael_c;
 
 #endif

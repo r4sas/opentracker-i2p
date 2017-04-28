@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_IOVEC_H__
-#define __OT_IOVEC_H__
+#ifndef OT_IOVEC_H__
+#define OT_IOVEC_H__
 
 #include <sys/uio.h>
 

@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_ACCESSLIST_H__
-#define __OT_ACCESSLIST_H__
+#ifndef OT_ACCESSLIST_H__
+#define OT_ACCESSLIST_H__
 
 #if defined ( WANT_ACCESSLIST_BLACK ) && defined (WANT_ACCESSLIST_WHITE )
 #  error WANT_ACCESSLIST_BLACK and WANT_ACCESSLIST_WHITE are exclusive.

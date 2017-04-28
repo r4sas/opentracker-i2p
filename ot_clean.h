@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_CLEAN_H__
-#define __OT_CLEAN_H__
+#ifndef OT_CLEAN_H__
+#define OT_CLEAN_H__
 
 /* The amount of time a clean cycle should take */
 #define OT_CLEAN_INTERVAL_MINUTES       2

@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __SCAN_URLENCODED_QUERY_H__
-#define __SCAN_URLENCODED_QUERY_H__
+#ifndef SCAN_URLENCODED_QUERY_H__
+#define SCAN_URLENCODED_QUERY_H__
 
 #include <sys/types.h>
 

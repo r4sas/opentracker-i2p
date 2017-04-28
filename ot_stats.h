@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_STATS_H__
-#define __OT_STATS_H__
+#ifndef OT_STATS_H__
+#define OT_STATS_H__
 
 typedef enum {
   EVENT_ACCEPT,
@@ -45,5 +45,8 @@ size_t return_stats_for_tracker( char *reply, int mode, int format );
 size_t stats_return_tracker_version( char *reply );
 void   stats_init( );
 void   stats_deinit( );
+
+extern const char *g_version_rijndael_c;
+extern const char *g_version_livesync_c;
 
 #endif

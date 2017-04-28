@@ -3,8 +3,8 @@
 
    $id$ */
 
-#ifndef __OT_TRACKERLOGIC_H__
-#define __OT_TRACKERLOGIC_H__
+#ifndef OT_TRACKERLOGIC_H__
+#define OT_TRACKERLOGIC_H__
 
 #include <sys/types.h>
 #include <sys/time.h>
