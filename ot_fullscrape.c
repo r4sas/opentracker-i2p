@@ -175,6 +175,10 @@ static void fullscrape_make( int *iovec_entries, struct iovec **iovector, ot_tas
         to_hex( r, *hash ); r+= 2 * sizeof(ot_hash);
         r += sprintf( r, ":%zd:%zd\n", peer_list->seed_count, peer_list->peer_count-peer_list->seed_count );
         break;
+      case TASK_FULLSCRAPE_TPB_ASCII_PLUS:
+        to_hex( r, *hash ); r+= 2 * sizeof(ot_hash);
+        r += sprintf( r, ":%zd:%zd:%zd\n", peer_list->seed_count, peer_list->peer_count-peer_list->seed_count, peer_list->down_count );
+        break;
       case TASK_FULLSCRAPE_TPB_BINARY:
         memcpy( r, *hash, sizeof(ot_hash) ); r += sizeof(ot_hash);
         *(uint32_t*)(r+0) = htonl( (uint32_t)  peer_list->seed_count );

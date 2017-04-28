@@ -184,7 +184,7 @@ static const ot_keywords keywords_mode[] =
     { NULL, -3 } };
 static const ot_keywords keywords_format[] =
   { { "bin", TASK_FULLSCRAPE_TPB_BINARY }, { "ben", TASK_FULLSCRAPE }, { "url", TASK_FULLSCRAPE_TPB_URLENCODED },
-    { "txt", TASK_FULLSCRAPE_TPB_ASCII }, { NULL, -3 } };
+    { "txt", TASK_FULLSCRAPE_TPB_ASCII }, { "txtp", TASK_FULLSCRAPE_TPB_ASCII_PLUS }, { NULL, -3 } };
 
   int mode = TASK_STATS_PEERS, scanon = 1, format = 0;
 
