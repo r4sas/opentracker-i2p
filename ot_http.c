@@ -497,8 +497,8 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
           return ws->reply_size = sprintf( ws->reply, "Successfully added.\n" );
         //}
       }
-#endif
         break;
+#endif
       case 9: /* matched "peer_id" */
         /* ignore this, when we have less than 20 bytes */
         if( scan_urlencoded_query( &read_ptr, write_ptr = read_ptr, SCAN_SEARCHPATH_VALUE ) != 20 ) HTTPERROR_400_PARAM;
