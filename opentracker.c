@@ -239,6 +239,7 @@ static void handle_accept( const int64 serversocket ) {
     tai_unix( &(t.sec), (g_now_seconds + OT_CLIENT_TIMEOUT) );
     io_timeout( sock, t );
   }
+  io_eagain(serversocket);
 }
 
 static void * server_mainloop( void * args ) {
@@ -269,9 +270,10 @@ static void * server_mainloop( void * args ) {
         handle_accept( sock );
       else if( (intptr_t)cookie == FLAG_UDP )
         handle_udp6( sock, &ws );
-      else if( (intptr_t)cookie == FLAG_SELFPIPE )
+      else if( (intptr_t)cookie == FLAG_SELFPIPE ) {
         io_tryread( sock, ws.inbuf, G_INBUF_SIZE );
-      else
+        fprintf(stderr, "pipe\n");
+      } else
         handle_read( sock, &ws );
     }
 
