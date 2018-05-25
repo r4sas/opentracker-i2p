@@ -270,10 +270,9 @@ static void * server_mainloop( void * args ) {
         handle_accept( sock );
       else if( (intptr_t)cookie == FLAG_UDP )
         handle_udp6( sock, &ws );
-      else if( (intptr_t)cookie == FLAG_SELFPIPE ) {
+      else if( (intptr_t)cookie == FLAG_SELFPIPE )
         io_tryread( sock, ws.inbuf, G_INBUF_SIZE );
-        fprintf(stderr, "pipe\n");
-      } else
+      else
         handle_read( sock, &ws );
     }
 
