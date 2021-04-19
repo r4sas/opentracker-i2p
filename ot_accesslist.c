@@ -25,9 +25,14 @@
 /* GLOBAL VARIABLES */
 #ifdef WANT_ACCESSLIST
        char    *g_accesslist_filename;
-static ot_hash *g_accesslist;
-static size_t   g_accesslist_size;
 static pthread_mutex_t g_accesslist_mutex;
+
+typedef struct {
+  ot_hash *list;
+  size_t   size;
+} ot_accesslist;
+ot_accesslist * g_accesslist = NULL;
+ot_accesslist * g_accesslist_old = NULL;
 
 static int vector_compare_hash(const void *hash1, const void *hash2 ) {
   return memcmp( hash1, hash2, OT_HASH_COMPARE_SIZE );
@@ -35,9 +40,10 @@ static int vector_compare_hash(const void *hash1, const void *hash2 ) {
 
 /* Read initial access list */
 static void accesslist_readfile( void ) {
-  ot_hash *info_hash, *accesslist_new = NULL, *accesslist_old;
-  char    *map, *map_end, *read_offs;
-  size_t   maplen;
+  ot_accesslist * accesslist_new = malloc(sizeof(ot_accesslist));
+  ot_hash *info_hash;
+  const char *map, *map_end, *read_offs;
+  size_t maplen;
 
   if( ( map = mmap_read( g_accesslist_filename, &maplen ) ) == NULL ) {
     char *wd = getcwd( NULL, 0 );
@@ -48,9 +54,11 @@ static void accesslist_readfile( void ) {
 
   /* You need at least 41 bytes to pass an info_hash, make enough room
      for the maximum amount of them */
-  info_hash = accesslist_new = malloc( ( maplen / 41 ) * 20 );
+  accesslist_new->size = 0;
+  info_hash = accesslist_new->list = malloc( ( maplen / 41 ) * 20 );
   if( !accesslist_new ) {
     fprintf( stderr, "Warning: Not enough memory to allocate %zd bytes for accesslist buffer. May succeed later.\n", ( maplen / 41 ) * 20 );
+    free(accesslist_new);
     return;
   }
 
@@ -81,28 +89,33 @@ static void accesslist_readfile( void ) {
     while( read_offs <= map_end && *(read_offs++) != '\n' );
   }
 #ifdef _DEBUG
-  fprintf( stderr, "Added %zd info_hashes to accesslist\n", (size_t)(info_hash - accesslist_new) );
+  fprintf( stderr, "Added %zd info_hashes to accesslist\n", (size_t)(info_hash - accesslist_new->list) );
 #endif
 
   mmap_unmap( map, maplen);
 
-  qsort( accesslist_new, info_hash - accesslist_new, sizeof( *info_hash ), vector_compare_hash );
+  qsort( accesslist_new->list, info_hash - accesslist_new->list, sizeof( *info_hash ), vector_compare_hash );
+  accesslist_new->size = info_hash - accesslist_new->list;
 
   /* Now exchange the accesslist vector in the least race condition prone way */
   pthread_mutex_lock(&g_accesslist_mutex);
 
-  accesslist_old = g_accesslist; /* Keep a copy for later free */
-  g_accesslist_size = 0;         /* Set size to 0 to prevent clients from searching through uninitialised memory */
-  g_accesslist      = accesslist_new; /* Only now set a new list */
-  g_accesslist_size = info_hash - accesslist_new; /* And finally store it's size */
-  free(g_accesslist_old);        /* If new list is active, the old one can be destroyed */
+  if (g_accesslist_old) {
+    free(g_accesslist_old->list);
+    free(g_accesslist_old);
+  }
+
+  g_accesslist_old = g_accesslist; /* Keep a copy for later free */
+  g_accesslist     = accesslist_new; /* Only now set a new list */
+
   pthread_mutex_unlock(&g_accesslist_mutex);
 }
 
 int accesslist_hashisvalid( ot_hash hash ) {
-  void *exactmatch;
+  /* Get working copy of current access list */
+  ot_accesslist * accesslist = g_accesslist;
 
-  exactmatch = bsearch( hash, g_accesslist, g_accesslist_size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
+  void * exactmatch = bsearch( hash, accesslist->list, accesslist->size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
 
 #ifdef WANT_ACCESSLIST_BLACK
   return exactmatch == NULL;
@@ -140,9 +153,18 @@ void accesslist_init( ) {
 void accesslist_deinit( void ) {
   pthread_cancel( thread_id );
   pthread_mutex_destroy(&g_accesslist_mutex);
-  free( g_accesslist );
-  g_accesslist = 0;
-  g_accesslist_size = 0;
+
+  if (g_accesslist_old) {
+    free(g_accesslist_old->list);
+    free(g_accesslist_old);
+    g_accesslist_old = 0;
+  }
+
+  if (g_accesslist) {
+    free(g_accesslist->list);
+    free(g_accesslist);
+    g_accesslist = 0;
+  }
 }
 #endif
 
