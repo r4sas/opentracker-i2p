@@ -56,8 +56,9 @@ static void accesslist_readfile( void ) {
      for the maximum amount of them */
   accesslist_new->size = 0;
   info_hash = accesslist_new->list = malloc( ( maplen / 41 ) * 20 );
-  if( !accesslist_new ) {
+  if( !accesslist_new->list ) {
     fprintf( stderr, "Warning: Not enough memory to allocate %zd bytes for accesslist buffer. May succeed later.\n", ( maplen / 41 ) * 20 );
+    mmap_unmap( map, maplen);
     free(accesslist_new);
     return;
   }
