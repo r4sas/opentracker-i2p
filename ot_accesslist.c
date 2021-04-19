@@ -35,7 +35,7 @@ static int vector_compare_hash(const void *hash1, const void *hash2 ) {
 
 /* Read initial access list */
 static void accesslist_readfile( void ) {
-  ot_hash *info_hash, *accesslist_new = NULL;
+  ot_hash *info_hash, *accesslist_new = NULL, *accesslist_old;
   char    *map, *map_end, *read_offs;
   size_t   maplen;
 
@@ -90,19 +90,19 @@ static void accesslist_readfile( void ) {
 
   /* Now exchange the accesslist vector in the least race condition prone way */
   pthread_mutex_lock(&g_accesslist_mutex);
-  free( g_accesslist );
-  g_accesslist      = accesslist_new;
-  g_accesslist_size = info_hash - accesslist_new;
+
+  accesslist_old = g_accesslist; /* Keep a copy for later free */
+  g_accesslist_size = 0;         /* Set size to 0 to prevent clients from searching through uninitialised memory */
+  g_accesslist      = accesslist_new; /* Only now set a new list */
+  g_accesslist_size = info_hash - accesslist_new; /* And finally store it's size */
+  free(g_accesslist_old);        /* If new list is active, the old one can be destroyed */
   pthread_mutex_unlock(&g_accesslist_mutex);
 }
 
 int accesslist_hashisvalid( ot_hash hash ) {
   void *exactmatch;
 
-  /* Lock should hardly ever be contended */
-  pthread_mutex_lock(&g_accesslist_mutex);
   exactmatch = bsearch( hash, g_accesslist, g_accesslist_size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
-  pthread_mutex_unlock(&g_accesslist_mutex);
 
 #ifdef WANT_ACCESSLIST_BLACK
   return exactmatch == NULL;
