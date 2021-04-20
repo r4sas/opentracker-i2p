@@ -12,6 +12,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#if defined(__linux__) && defined(WANT_ARC4RANDOM)
+#include <bsd/stdlib.h>
+#endif
+#ifdef __FreeBSD__
+#define WANT_ARC4RANDOM
+#endif
+
 typedef uint8_t ot_hash[20];
 typedef time_t  ot_time;
 typedef char    ot_ip6[16];

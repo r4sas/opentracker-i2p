@@ -553,7 +553,11 @@ int main( int argc, char **argv ) {
   int scanon = 1, lbound = 0, sbound = 0;
 
   srandom( time(NULL) );
+#ifdef WANT_ARC4RANDOM
+  g_tracker_id = arc4random();
+#else
   g_tracker_id = random();
+#endif
   noipv6=1;
 
   while( scanon ) {

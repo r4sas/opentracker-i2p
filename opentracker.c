@@ -256,11 +256,17 @@ static void * server_mainloop( void * args ) {
 #ifdef _DEBUG_HTTPERROR
   ws.debugbuf= malloc( G_DEBUGBUF_SIZE );
 #endif
+
   if( !ws.inbuf || !ws.outbuf )
     panic( "Initializing worker failed" );
+
+#ifdef WANT_ARC4RANDOM
+  arc4random_buf(&ws.rand48_state[0], 3 * sizeof(uint16_t));
+#else
   ws.rand48_state[0] = (uint16_t)random();
   ws.rand48_state[1] = (uint16_t)random();
   ws.rand48_state[2] = (uint16_t)random();
+#endif
 
   for( ; ; ) {
     int64 sock;
