@@ -116,7 +116,10 @@ int accesslist_hashisvalid( ot_hash hash ) {
   /* Get working copy of current access list */
   ot_accesslist * accesslist = g_accesslist;
 
-  void * exactmatch = bsearch( hash, accesslist->list, accesslist->size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
+  void * exactmatch = NULL;
+
+  if (accesslist)
+      bsearch( hash, accesslist->list, accesslist->size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
 
 #ifdef WANT_ACCESSLIST_BLACK
   return exactmatch == NULL;
