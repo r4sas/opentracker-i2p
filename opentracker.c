@@ -258,6 +258,9 @@ static void * server_mainloop( void * args ) {
 #endif
   if( !ws.inbuf || !ws.outbuf )
     panic( "Initializing worker failed" );
+  ws.rand48_state[0] = (uint16_t)random();
+  ws.rand48_state[1] = (uint16_t)random();
+  ws.rand48_state[2] = (uint16_t)random();
 
   for( ; ; ) {
     int64 sock;

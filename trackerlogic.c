@@ -29,7 +29,7 @@
 #include "ot_livesync.h"
 
 /* Forward declaration */
-size_t return_peers_for_torrent( ot_torrent *torrent, size_t amount, char *reply, PROTO_FLAG proto );
+size_t return_peers_for_torrent( struct ot_workstruct * ws, ot_torrent *torrent, size_t amount, char *reply, PROTO_FLAG proto );
 
 void free_peerlist( ot_peerlist *peer_list ) {
   if( peer_list->peers.data ) {
@@ -178,7 +178,7 @@ size_t add_peer_to_torrent_and_return_peers( PROTO_FLAG proto, struct ot_workstr
   }
 #endif
 
-  ws->reply_size = return_peers_for_torrent( torrent, amount, ws->reply, proto );
+  ws->reply_size = return_peers_for_torrent( ws, torrent, amount, ws->reply, proto );
   mutex_bucket_unlock_by_hash( *ws->hash, delta_torrentcount );
   return ws->reply_size;
 }
@@ -210,7 +210,7 @@ static size_t return_peers_all( ot_peerlist *peer_list, char *reply ) {
   return result;
 }
 
-static size_t return_peers_selection( ot_peerlist *peer_list, size_t amount, char *reply ) {
+static size_t return_peers_selection( struct ot_workstruct *ws, ot_peerlist *peer_list, size_t amount, char *reply ) {
   unsigned int bucket_offset, bucket_index = 0, num_buckets = 1;
   ot_vector  * bucket_list = &peer_list->peers;
   unsigned int shifted_pc = peer_list->peer_count;
@@ -232,7 +232,7 @@ static size_t return_peers_selection( ot_peerlist *peer_list, size_t amount, cha
 
   /* Initialize somewhere in the middle of peers so that
    fixpoint's aliasing doesn't alway miss the same peers */
-  bucket_offset = random() % peer_list->peer_count;
+  bucket_offset = nrand48(ws->rand48_state) % peer_list->peer_count;
 
   while( amount-- ) {
     ot_peer * peer;
@@ -240,7 +240,7 @@ static size_t return_peers_selection( ot_peerlist *peer_list, size_t amount, cha
     /* This is the aliased, non shifted range, next value may fall into */
     unsigned int diff = ( ( ( amount + 1 ) * shifted_step ) >> shift ) -
                         ( (   amount       * shifted_step ) >> shift );
-    bucket_offset += 1 + random() % diff;
+    bucket_offset += 1 + nrand48(ws->rand48_state) % diff;
 
     while( bucket_offset >= bucket_list[bucket_index].size ) {
       bucket_offset -= bucket_list[bucket_index].size;
@@ -262,7 +262,7 @@ static size_t return_peers_selection( ot_peerlist *peer_list, size_t amount, cha
    * reply must have enough space to hold 92+6*amount bytes
    * does not yet check not to return self
 */
-size_t return_peers_for_torrent( ot_torrent *torrent, size_t amount, char *reply, PROTO_FLAG proto ) {
+size_t return_peers_for_torrent( struct ot_workstruct * ws, ot_torrent *torrent, size_t amount, char *reply, PROTO_FLAG proto ) {
   ot_peerlist *peer_list = torrent->peer_list;
   char        *r = reply;
 
@@ -283,7 +283,7 @@ size_t return_peers_for_torrent( ot_torrent *torrent, size_t amount, char *reply
     if( amount == peer_list->peer_count )
       r += return_peers_all( peer_list, r );
     else
-      r += return_peers_selection( peer_list, amount, r );
+      r += return_peers_selection( ws, peer_list, amount, r );
   }
 
   if( proto == FLAG_TCP )

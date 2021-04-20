@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef uint8_t ot_hash[20];
 typedef time_t  ot_time;
@@ -34,7 +35,7 @@ typedef struct { ot_ip6 address; int bits; }
 #define OT_TORRENT_TIMEOUT_HOURS 24
 #define OT_TORRENT_TIMEOUT      (60*OT_TORRENT_TIMEOUT_HOURS)
 
-#define OT_CLIENT_REQUEST_INTERVAL_RANDOM ( OT_CLIENT_REQUEST_INTERVAL - OT_CLIENT_REQUEST_VARIATION/2 + (int)( random( ) % OT_CLIENT_REQUEST_VARIATION ) )
+#define OT_CLIENT_REQUEST_INTERVAL_RANDOM ( OT_CLIENT_REQUEST_INTERVAL - OT_CLIENT_REQUEST_VARIATION/2 + (int)( nrand48(ws->rand48_state) % OT_CLIENT_REQUEST_VARIATION ) )
 
 /* If WANT_MODEST_FULLSCRAPES is on, ip addresses may not
    fullscrape more frequently than this amount in seconds */
@@ -131,6 +132,10 @@ struct ot_workstruct {
   ssize_t  header_size;
   char    *reply;
   ssize_t  reply_size;
+
+  /* Entropy state for rand48 function so that threads don't need to acquire mutexes for
+     global random() or arc4random() state, which causes heavy load on linuxes */
+  uint16_t rand48_state[3];
 };
 
 /*
