@@ -204,7 +204,11 @@ static void handle_read( const int64 sock, struct ot_workstruct *ws ) {
 
 static void handle_write( const int64 sock ) {
   struct http_data* cookie=io_getcookie( sock );
-  if( !cookie || ( iob_send( sock, &cookie->batch ) <= 0 ) )
+  if( cookie ) {
+    int64 res = iob_send( sock, &cookie->batch );
+    if (res == 0 || res == -3)
+      handle_dead( sock );
+  } else
     handle_dead( sock );
 }
 
