@@ -30,7 +30,7 @@
    Full scrapes usually are huge and one does not want to
    allocate more memory. So lets get them in 512k units
 */
-#define OT_SCRAPE_CHUNK_SIZE (512*1024)
+#define OT_SCRAPE_CHUNK_SIZE (1024*1024)
 
 /* "d8:completei%zde10:downloadedi%zde10:incompletei%zdee" */
 #define OT_SCRAPE_MAXENTRYLEN 256
@@ -220,9 +220,10 @@ static void fullscrape_make_gzip( int *iovec_entries, struct iovec **iovector, o
       /* Check if there still is enough buffer left */
       while( !strm.avail_out ) {
         /* Allocate a fresh output buffer at the end of our buffers list */
-        r = iovec_fix_increase_or_free( iovec_entries, iovector, strm.next_out, OT_SCRAPE_CHUNK_SIZE );
+        r = iovec_increase( iovec_entries, iovector, OT_SCRAPE_CHUNK_SIZE );
         if( !r ) {
           fprintf( stderr, "Problem with iovec_fix_increase_or_free\n" );
+          iovec_free( iovec_entries, iovector );
           deflateEnd(&strm);
           return mutex_bucket_unlock( bucket, 0 );
         }
