@@ -191,7 +191,7 @@ static void fullscrape_make_gzip( int *iovec_entries, struct iovec **iovector, o
   byte_zero( &strm, sizeof(strm) );
   strm.next_out  = (uint8_t*)r;
   strm.avail_out = OT_SCRAPE_CHUNK_SIZE;
-  if( deflateInit2(&strm,7,Z_DEFLATED,31,8,Z_DEFAULT_STRATEGY) != Z_OK )
+  if( deflateInit2(&strm,7,Z_DEFLATED,31,9,Z_DEFAULT_STRATEGY) != Z_OK )
     fprintf( stderr, "not ok.\n" );
 
   if( ( mode & TASK_TASK_MASK ) == TASK_FULLSCRAPE ) {

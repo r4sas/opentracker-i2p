@@ -156,7 +156,10 @@ static size_t header_complete( char * request, ssize_t byte_count ) {
 static void handle_dead( const int64 sock ) {
   struct http_data* cookie=io_getcookie( sock );
   if( cookie ) {
-    iob_reset( &cookie->batch );
+    size_t i;
+    for ( i = 0; i < cookie->batches; ++i)
+        iob_reset( cookie->batch + i );
+    free( cookie->batch );
     array_reset( &cookie->request );
     if( cookie->flag & STRUCT_HTTP_FLAG_WAITINGFORTASK )
       mutex_workqueue_canceltask( sock );
@@ -204,12 +207,22 @@ static void handle_read( const int64 sock, struct ot_workstruct *ws ) {
 
 static void handle_write( const int64 sock ) {
   struct http_data* cookie=io_getcookie( sock );
-  if( cookie ) {
-    int64 res = iob_send( sock, &cookie->batch );
-    if (res == 0 || res == -3)
-      handle_dead( sock );
-  } else
-    handle_dead( sock );
+  size_t i;
+
+  /* Look for the first io_batch still containing bytes to write */
+  if( cookie )
+    for( i = 0; i < cookie->batches; ++i )
+      if( cookie->batch[i].bytesleft ) {
+        int64 res = iob_send( sock, cookie->batch + i );
+
+        if( res == -3 )
+          break;
+
+        if( res == -1 || res > 0 || i < cookie->batches - 1 )
+          return;
+      }
+
+  handle_dead( sock );
 }
 
 static void handle_accept( const int64 serversocket ) {
