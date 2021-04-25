@@ -218,6 +218,9 @@ static void handle_write( const int64 sock ) {
         if( res == -3 )
           break;
 
+        if( !cookie->batch[i].bytesleft )
+          continue;
+
         if( res == -1 || res > 0 || i < cookie->batches - 1 )
           return;
       }
