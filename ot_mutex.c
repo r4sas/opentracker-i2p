@@ -126,7 +126,7 @@ void mutex_workqueue_canceltask( int64 sock ) {
 
     /* Free task's iovec */
     for( i=0; i<(*task)->iovec_entries; ++i )
-      munmap( iovec[i].iov_base, iovec[i].iov_len );
+      free( iovec[i].iov_base );
 
     *task = (*task)->next;
     free( ptask );

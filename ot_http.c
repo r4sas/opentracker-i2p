@@ -125,7 +125,7 @@ ssize_t http_sendiovecdata( const int64 sock, struct ot_workstruct *ws, int iove
   struct http_data *cookie = io_getcookie( sock );
   char *header;
   int i;
-  size_t header_size, size = iovec_length( &iovec_entries, &iovector );
+  size_t header_size, size = iovec_length( &iovec_entries, (const struct iovec **)&iovector );
   tai6464 t;
 
   /* No cookie? Bad socket. Leave. */
