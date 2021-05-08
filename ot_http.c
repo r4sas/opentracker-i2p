@@ -168,7 +168,7 @@ ssize_t http_sendiovecdata( const int64 sock, struct ot_workstruct *ws, int iove
 
   /* Split huge iovectors into separate io_batches */
   for( i=0; i<iovec_entries; ++i ) {
-    io_batch *current = cookie->batch + cookie->batches;
+    io_batch *current = cookie->batch + cookie->batches - 1;
 
     /* If the current batch's limit is reached, try to reallocate a new batch to work on */
     if( current->bytesleft > OT_BATCH_LIMIT ) {
@@ -180,7 +180,7 @@ ssize_t http_sendiovecdata( const int64 sock, struct ot_workstruct *ws, int iove
         }
     }
 
-    iob_addbuf_munmap( current, iovector[i].iov_base, iovector[i].iov_len );
+    iob_addbuf_free( current, iovector[i].iov_base, iovector[i].iov_len );
   }
   free( iovector );
 
