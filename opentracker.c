@@ -170,9 +170,9 @@ static void handle_dead( const int64 sock ) {
 
 static void handle_read( const int64 sock, struct ot_workstruct *ws ) {
   struct http_data* cookie = io_getcookie( sock );
-  ssize_t byte_count;
+  ssize_t byte_count = io_tryread( sock, ws->inbuf, G_INBUF_SIZE );
 
-  if( ( byte_count = io_tryread( sock, ws->inbuf, G_INBUF_SIZE ) ) <= 0 ) {
+  if( byte_count == 0 || byte_count == -3 ) {
     handle_dead( sock );
     return;
   }
