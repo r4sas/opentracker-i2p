@@ -119,7 +119,7 @@ int accesslist_hashisvalid( ot_hash hash ) {
   void * exactmatch = NULL;
 
   if (accesslist)
-      bsearch( hash, accesslist->list, accesslist->size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
+      exactmatch = bsearch( hash, accesslist->list, accesslist->size, OT_HASH_COMPARE_SIZE, vector_compare_hash );
 
 #ifdef WANT_ACCESSLIST_BLACK
   return exactmatch == NULL;
