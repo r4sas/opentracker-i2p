@@ -18,6 +18,7 @@ LIBOWFAT_HEADERS=$(PREFIX)/libowfat
 LIBOWFAT_LIBRARY=$(PREFIX)/libowfat
 
 BINDIR?=$(PREFIX)/bin
+STRIP?=strip
 
 #FEATURES+=-DWANT_V6
 
@@ -71,7 +72,7 @@ CFLAGS_debug = $(CFLAGS) $(OPTS_debug) $(FEATURES)
 
 $(BINARY): $(OBJECTS) $(HEADERS)
 	$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
-	strip $@
+	$(STRIP) $@
 $(BINARY).debug: $(OBJECTS_debug) $(HEADERS)
 	$(CC) -o $@ $(OBJECTS_debug) $(LDFLAGS)
 proxy: $(OBJECTS_proxy) $(HEADERS)
