@@ -90,4 +90,4 @@ clean:
 	rm -rf opentracker opentracker.debug *.o *~
 
 install:
-	install -m 755 opentracker $(BINDIR)
+	install -m 755 opentracker $(DESTDIR)$(BINDIR)
