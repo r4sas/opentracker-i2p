@@ -123,7 +123,7 @@ static void help( char *name ) {
   HELPLINE("-P port","specify udp port to bind to (default: 6969, you may specify more than one)");
   HELPLINE("-r redirecturl","specify url where / should be redirected to (default none)");
   HELPLINE("-d dir","specify directory to try to chroot to (default: \".\")");
-  HELPLINE("-u user","specify user under whose priviliges opentracker should run (default: \"nobody\")");
+  HELPLINE("-u user","specify user under whose privileges opentracker should run (default: \"nobody\")");
   HELPLINE("-A ip","bless an ip address as admin address (e.g. to allow syncs from this address)");
 #ifdef WANT_ACCESSLIST_BLACK
   HELPLINE("-b file","specify blacklist file.");
