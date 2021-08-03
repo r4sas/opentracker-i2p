@@ -171,8 +171,8 @@ size_t remove_peer_from_torrent_proxy( ot_hash hash, ot_peer *peer ) {
   if( exactmatch ) {
     ot_peerlist *peer_list = torrent->peer_list;
     switch( vector_remove_peer( &peer_list->peers, peer ) ) {
-      case 2:  peer_list->seed_count--; /* Fall throughs intended */
-      case 1:  peer_list->peer_count--; /* Fall throughs intended */
+      case 2:  peer_list->seed_count--; /* Intentional fallthrough */
+      case 1:  peer_list->peer_count--; /* Intentional fallthrough */
       default: break;
     }
   }
