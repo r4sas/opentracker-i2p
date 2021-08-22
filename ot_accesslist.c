@@ -321,7 +321,7 @@ int accesslist_blessip( ot_ip6 ip, ot_permissions permissions ) {
     if( permissions & OT_PERMISSION_MAY_PROXY      ) off += snprintf( _debug+off, 512-off, " may_proxy" );
     if( !permissions ) off += snprintf( _debug+off, sizeof(_debug)-off, " nothing\n" );
     _debug[off++] = '.';
-    write( 2, _debug, off );
+    (void)write( 2, _debug, off );
   }
 #endif
 
