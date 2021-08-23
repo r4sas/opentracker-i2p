@@ -559,20 +559,12 @@ int drop_privileges ( const char * const serveruser, const char * const serverdi
     /* If we can't find server user, revert to nobody's default uid */
     if( !pws ) {
       fprintf( stderr, "Warning: Could not get password entry for %s. Reverting to uid -2.\n", serveruser );
-      if (!setegid( (gid_t)-2 ) ||
-          !setgid( (gid_t)-2 ) ||
-          !setuid( (uid_t)-2 ) ||
-          !seteuid( (uid_t)-2 )) {
+      if (setegid( (gid_t)-2 ) || setgid( (gid_t)-2 ) || setuid( (uid_t)-2 ) || seteuid( (uid_t)-2 ))
         panic("Could not set uid to value -2");
-      }
     }
     else {
-      if (!setegid( pws->pw_gid ) ||
-          !setgid( pws->pw_gid ) ||
-          !setuid( pws->pw_uid ) ||
-          !seteuid( pws->pw_uid )) {
+      if (setegid( pws->pw_gid ) || setgid( pws->pw_gid ) || setuid( pws->pw_uid ) || seteuid( pws->pw_uid ))
         panic("Could not set uid to specified value");
-      }
     }
 
     if( geteuid() == 0 || getegid() == 0 )
