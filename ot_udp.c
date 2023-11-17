@@ -20,6 +20,11 @@
 #include "ot_stats.h"
 #include "ot_rijndael.h"
 
+#ifdef WANT_I2P
+#include "base64.h"
+#include "sha256.h"
+#endif
+
 #if 0
 static const uint8_t g_static_connid[8] = { 0x23, 0x42, 0x05, 0x17, 0xde, 0x41, 0x50, 0xff };
 #endif
