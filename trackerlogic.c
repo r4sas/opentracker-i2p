@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /* Libowfat */
 #include "byte.h"
@@ -183,40 +184,65 @@ size_t add_peer_to_torrent_and_return_peers( PROTO_FLAG proto, struct ot_workstr
   return ws->reply_size;
 }
 
-static size_t return_peers_all( ot_peerlist *peer_list, char *reply ) {
+static size_t return_peers_all( ot_peerlist *peer_list, bool compact, char *reply ) {
   unsigned int bucket, num_buckets = 1;
-  ot_vector  * bucket_list = &peer_list->peers;
-  size_t       result = OT_PEER_COMPARE_SIZE * peer_list->peer_count;
-  char       * r_end = reply + result;
+  size_t result = 0;
+  ot_vector * bucket_list = &peer_list->peers;
+  if( compact ) {
+    result = OT_PEER_COMPACT_COMPARE_SIZE * peer_list->peer_count;
+  } else {
+    result = OT_PEER_COMPARE_SIZE * peer_list->peer_count;
+  }
+  char * r_end = reply + result;
 
   if( OT_PEERLIST_HASBUCKETS(peer_list) ) {
     num_buckets = bucket_list->size;
     bucket_list = (ot_vector *)bucket_list->data;
   }
 
-  for( bucket = 0; bucket<num_buckets; ++bucket ) {
-    ot_peer * peers = (ot_peer*)bucket_list[bucket].data;
-    size_t    peer_count = bucket_list[bucket].size;
-    while( peer_count-- ) {
-      if( OT_PEERFLAG(peers) & PEER_FLAG_SEEDING ) {
-        r_end-=OT_PEER_COMPARE_SIZE;
-        memcpy(r_end,peers++,OT_PEER_COMPARE_SIZE);
-      } else {
-        memcpy(reply,peers++,OT_PEER_COMPARE_SIZE);
-        reply+=OT_PEER_COMPARE_SIZE;
+#ifdef WANT_I2P
+  if( compact ) {
+    for( bucket = 0; bucket<num_buckets; ++bucket ) {
+      ot_peer * peers = (ot_peer*)bucket_list[bucket].data;
+      size_t    peer_count = bucket_list[bucket].size;
+      while( peer_count-- ) {
+        if( OT_PEERFLAG(peers) & PEER_FLAG_SEEDING ) {
+          r_end-=OT_PEER_COMPACT_COMPARE_SIZE;
+          memcpy(r_end,peers++,OT_PEER_COMPACT_COMPARE_SIZE);
+        } else {
+          memcpy(reply,peers++,OT_PEER_COMPACT_COMPARE_SIZE);
+          reply+=OT_PEER_COMPACT_COMPARE_SIZE;
+        }
       }
     }
+  } else {
+#endif
+    for( bucket = 0; bucket<num_buckets; ++bucket ) {
+      ot_peer * peers = (ot_peer*)bucket_list[bucket].data;
+      size_t    peer_count = bucket_list[bucket].size;
+      while( peer_count-- ) {
+        if( OT_PEERFLAG(peers) & PEER_FLAG_SEEDING ) {
+          r_end-=OT_PEER_COMPARE_SIZE;
+          memcpy(r_end,peers++,OT_PEER_COMPARE_SIZE);
+        } else {
+          memcpy(reply,peers++,OT_PEER_COMPARE_SIZE);
+          reply+=OT_PEER_COMPARE_SIZE;
+        }
+      }
+    }
+#ifdef WANT_I2P
   }
+#endif
   return result;
 }
 
-static size_t return_peers_selection( struct ot_workstruct *ws, ot_peerlist *peer_list, size_t amount, char *reply ) {
+static size_t return_peers_selection( struct ot_workstruct *ws, ot_peerlist *peer_list, size_t amount, bool compact, char *reply ) {
   unsigned int bucket_offset, bucket_index = 0, num_buckets = 1;
   ot_vector  * bucket_list = &peer_list->peers;
   unsigned int shifted_pc = peer_list->peer_count;
   unsigned int shifted_step = 0;
   unsigned int shift = 0;
-  size_t       result = OT_PEER_COMPARE_SIZE * amount;
+  size_t       result = ( compact ? OT_PEER_COMPACT_COMPARE_SIZE : OT_PEER_COMPARE_SIZE ) * amount;
   char       * r_end = reply + result;
 
   if( OT_PEERLIST_HASBUCKETS(peer_list) ) {
@@ -247,13 +273,27 @@ static size_t return_peers_selection( struct ot_workstruct *ws, ot_peerlist *pee
       bucket_index = ( bucket_index + 1 ) % num_buckets;
     }
     peer = ((ot_peer*)bucket_list[bucket_index].data) + bucket_offset;
-    if( OT_PEERFLAG(peer) & PEER_FLAG_SEEDING ) {
-      r_end-=OT_PEER_COMPARE_SIZE;
-      memcpy(r_end,peer,OT_PEER_COMPARE_SIZE);
+#ifdef WANT_I2P
+    if( compact ) {
+      if( OT_PEERFLAG(peer) & PEER_FLAG_SEEDING ) {
+        r_end-=OT_PEER_COMPACT_COMPARE_SIZE;
+        memcpy(r_end,peer,OT_PEER_COMPACT_COMPARE_SIZE);
+      } else {
+        memcpy(reply,peer,OT_PEER_COMPACT_COMPARE_SIZE);
+        reply+=OT_PEER_COMPACT_COMPARE_SIZE;
+      }
     } else {
-      memcpy(reply,peer,OT_PEER_COMPARE_SIZE);
-      reply+=OT_PEER_COMPARE_SIZE;
+#endif
+      if( OT_PEERFLAG(peer) & PEER_FLAG_SEEDING ) {
+        r_end-=OT_PEER_COMPARE_SIZE;
+        memcpy(r_end,peer,OT_PEER_COMPARE_SIZE);
+      } else {
+        memcpy(reply,peer,OT_PEER_COMPARE_SIZE);
+        reply+=OT_PEER_COMPARE_SIZE;
+      }
+#ifdef WANT_I2P
     }
+#endif
   }
   return result;
 }
@@ -269,9 +309,11 @@ size_t return_peers_for_torrent( struct ot_workstruct * ws, ot_torrent *torrent,
   if( amount > peer_list->peer_count )
     amount = peer_list->peer_count;
 
+  bool compact = ws->compact;
+
   if( proto == FLAG_TCP ) {
     int erval = OT_CLIENT_REQUEST_INTERVAL_RANDOM;
-    r += sprintf( r, "d8:completei%zde10:downloadedi%zde10:incompletei%zde8:intervali%ie12:min intervali%ie" PEERS_BENCODED "%zd:", peer_list->seed_count, peer_list->down_count, peer_list->peer_count-peer_list->seed_count, erval, erval/2, OT_PEER_COMPARE_SIZE*amount );
+    r += sprintf( r, "d8:completei%zde10:downloadedi%zde10:incompletei%zde8:intervali%ie12:min intervali%ie" PEERS_BENCODED "%zd:", peer_list->seed_count, peer_list->down_count, peer_list->peer_count-peer_list->seed_count, erval, erval/2, ( compact ? OT_PEER_COMPACT_COMPARE_SIZE : OT_PEER_COMPARE_SIZE ) * amount );
   } else {
     *(uint32_t*)(r+0) = htonl( OT_CLIENT_REQUEST_INTERVAL_RANDOM );
     *(uint32_t*)(r+4) = htonl( peer_list->peer_count - peer_list->seed_count );
@@ -281,9 +323,9 @@ size_t return_peers_for_torrent( struct ot_workstruct * ws, ot_torrent *torrent,
 
   if( amount ) {
     if( amount == peer_list->peer_count )
-      r += return_peers_all( peer_list, r );
+      r += return_peers_all( peer_list, compact, r );
     else
-      r += return_peers_selection( ws, peer_list, amount, r );
+      r += return_peers_selection( ws, peer_list, amount, compact, r );
   }
 
   if( proto == FLAG_TCP )

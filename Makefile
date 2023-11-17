@@ -20,13 +20,14 @@ LIBOWFAT_LIBRARY=$(PREFIX)/libowfat
 BINDIR?=$(PREFIX)/bin
 STRIP?=strip
 
+FEATURES+=-DWANT_I2P
 #FEATURES+=-DWANT_V6
 
 #FEATURES+=-DWANT_ACCESSLIST_BLACK
 #FEATURES+=-DWANT_ACCESSLIST_WHITE
 
 #FEATURES+=-DWANT_SYNC_LIVE
-#FEATURES+=-DWANT_IP_FROM_QUERY_STRING
+FEATURES+=-DWANT_IP_FROM_QUERY_STRING
 #FEATURES+=-DWANT_COMPRESSION_GZIP
 #FEATURES+=-DWANT_COMPRESSION_GZIP_ALWAYS
 #FEATURES+=-DWANT_LOG_NETWORKS
@@ -38,7 +39,7 @@ STRIP?=strip
 #FEATURES+=-DWANT_SPOT_WOODPECKER
 #FEATURES+=-DWANT_SYSLOGS
 #FEATURES+=-DWANT_DEV_RANDOM
-FEATURES+=-DWANT_FULLSCRAPE
+#FEATURES+=-DWANT_FULLSCRAPE
 
 # Is enabled on BSD systems by default in trackerlogic.h
 # on Linux systems you will need -lbds
@@ -55,8 +56,13 @@ LDFLAGS+=-L$(LIBOWFAT_LIBRARY) -lowfat -pthread -lpthread -lz
 
 BINARY =opentracker
 HEADERS=trackerlogic.h scan_urlencoded_query.h ot_mutex.h ot_stats.h ot_vector.h ot_clean.h ot_udp.h ot_iovec.h ot_fullscrape.h ot_accesslist.h ot_http.h ot_livesync.h ot_rijndael.h
-SOURCES=opentracker.c trackerlogic.c scan_urlencoded_query.c ot_mutex.c ot_stats.c ot_vector.c ot_clean.c ot_udp.c ot_iovec.c ot_fullscrape.c ot_accesslist.c ot_http.c ot_livesync.c ot_rijndael.c
+SOURCES=opentracker.c trackerlogic.c scan_urlencoded_query.c ot_mutex.c ot_stats.c ot_vector.c ot_clean.c ot_udp.c ot_iovec.c ot_fullscrape.c ot_accesslist.c ot_http.c ot_livesync.c ot_rijndael.c sha256.c
 SOURCES_proxy=proxy.c ot_vector.c ot_mutex.c
+
+ifneq (, $(findstring WANT_I2P, $(FEATURES)))
+	HEADERS += base64.h sha256.h
+	SOUIRCES += sha256.c
+endif
 
 OBJECTS = $(SOURCES:%.c=%.o)
 OBJECTS_debug = $(SOURCES:%.c=%.debug.o)

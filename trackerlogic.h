@@ -11,6 +11,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #if defined(__linux__) && defined(WANT_ARC4RANDOM)
 #include <bsd/stdlib.h>
@@ -21,9 +22,18 @@
 
 typedef uint8_t ot_hash[20];
 typedef time_t  ot_time;
+#ifdef WANT_I2P
+typedef char    ot_ip6[532];
+#else
 typedef char    ot_ip6[16];
+#endif
 typedef struct { ot_ip6 address; int bits; }
                 ot_net;
+#ifdef WANT_I2P
+#define OT_IP_SIZE 524
+#define OT_B32_SIZE 32
+#define PEERS_BENCODED "5:peers"
+#else
 #ifdef WANT_V6
 #define OT_IP_SIZE 16
 #define PEERS_BENCODED "6:peers6"
@@ -31,14 +41,22 @@ typedef struct { ot_ip6 address; int bits; }
 #define OT_IP_SIZE 4
 #define PEERS_BENCODED "5:peers"
 #endif
+#endif
 
 /* Some tracker behaviour tunable */
+#ifdef WANT_I2P
+#define OT_CLIENT_TIMEOUT 60
+#else
 #define OT_CLIENT_TIMEOUT 30
+#endif
 #define OT_CLIENT_TIMEOUT_CHECKINTERVAL 10
 #define OT_CLIENT_TIMEOUT_SEND (60*15)
+#ifdef WANT_I2P
+#define OT_CLIENT_REQUEST_INTERVAL (60*20)
+#else
 #define OT_CLIENT_REQUEST_INTERVAL (60*30)
+#endif
 #define OT_CLIENT_REQUEST_VARIATION (60*6)
-
 #define OT_TORRENT_TIMEOUT_HOURS 24
 #define OT_TORRENT_TIMEOUT      (60*OT_TORRENT_TIMEOUT_HOURS)
 
@@ -81,17 +99,27 @@ static const uint8_t PEER_FLAG_STOPPED   = 0x20;
 static const uint8_t PEER_FLAG_FROM_SYNC = 0x10;
 static const uint8_t PEER_FLAG_LEECHING  = 0x00;
 
+#ifdef WANT_I2P
+#define OT_SETIP(peer,ip,len) memcpy((peer),(ip),(len)); bzero((((uint8_t*) (peer)) + (len)), OT_IP_SIZE - (len))
+#else
 #ifdef WANT_V6
 #define OT_SETIP(peer,ip)     memcpy((peer),(ip),(OT_IP_SIZE))
 #else
 #define OT_SETIP(peer,ip)     memcpy((peer),(((uint8_t*)ip)+12),(OT_IP_SIZE))
+#endif
 #endif
 #define OT_SETPORT(peer,port) memcpy(((uint8_t*)(peer))+(OT_IP_SIZE),(port),2)
 #define OT_PEERFLAG(peer)     (((uint8_t*)(peer))[(OT_IP_SIZE)+2])
 #define OT_PEERTIME(peer)     (((uint8_t*)(peer))[(OT_IP_SIZE)+3])
 
 #define OT_HASH_COMPARE_SIZE (sizeof(ot_hash))
+#ifdef WANT_I2P
+/* we don't need port and copying only destination */
+#define OT_PEER_COMPARE_SIZE ((OT_IP_SIZE))
+#define OT_PEER_COMPACT_COMPARE_SIZE ((OT_B32_SIZE))
+#else
 #define OT_PEER_COMPARE_SIZE ((OT_IP_SIZE)+2)
+#endif
 
 struct ot_peerlist;
 typedef struct ot_peerlist ot_peerlist;
@@ -143,6 +171,9 @@ struct ot_workstruct {
   /* Entropy state for rand48 function so that threads don't need to acquire mutexes for
      global random() or arc4random() state, which causes heavy load on linuxes */
   uint16_t rand48_state[3];
+
+  /* Store request type to response correctly */
+  bool compact;
 };
 
 /*

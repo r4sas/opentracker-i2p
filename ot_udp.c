@@ -149,7 +149,11 @@ int handle_udp6( int64 serversocket, struct ot_workstruct *ws ) {
       port     = *(uint16_t*)( ((char*)inpacket) + 96 );
       ws->hash = (ot_hash*)( ((char*)inpacket) + 16 );
 
+#ifdef WANT_I2P
+      OT_SETIP( &ws->peer, remoteip, 16 );
+#else
       OT_SETIP( &ws->peer, remoteip );
+#endif
       OT_SETPORT( &ws->peer, &port );
       OT_PEERFLAG( &ws->peer ) = 0;
 

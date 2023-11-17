@@ -30,6 +30,11 @@
 #include "ot_stats.h"
 #include "ot_accesslist.h"
 
+#ifdef WANT_I2P
+#include "base64.h"
+#include "sha256.h"
+#endif
+
 #define OT_MAXMULTISCRAPE_COUNT 64
 #define OT_BATCH_LIMIT (1024*1024*16)
 extern char *g_redirecturl;
@@ -402,11 +407,13 @@ static ot_keywords keywords_announce[] = { { "port", 1 }, { "left", 2 }, { "even
 { NULL, -3 } };
 static ot_keywords keywords_announce_event[] = { { "completed", 1 }, { "stopped", 2 }, { NULL, -3 } };
 static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws, char *read_ptr ) {
-  int               numwant, tmp, scanon;
+  int               numwant, compact, tmp, scanon;
   unsigned short    port = 0;
   char             *write_ptr;
   ssize_t           len;
+#ifndef WANT_I2P
   struct http_data *cookie = io_getcookie( sock );
+#endif
 
   /* This is to hack around stupid clients that send "announce ?info_hash" */
   if( read_ptr[-1] != '?' ) {
@@ -415,6 +422,7 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
     ++read_ptr;
   }
 
+#ifndef WANT_I2P
 #ifdef WANT_IP_FROM_PROXY
   if( accesslist_isblessed( cookie->ip, OT_PERMISSION_MAY_PROXY ) ) {
     ot_ip6 proxied_ip;
@@ -426,6 +434,7 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
   } else
 #endif
   OT_SETIP( &ws->peer, cookie->ip );
+#endif
 
   ws->peer_id = NULL;
   ws->hash = NULL;
@@ -466,13 +475,22 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
     case 4: /* matched "numwant" */
       len = scan_urlencoded_query( &read_ptr, write_ptr = read_ptr, SCAN_SEARCHPATH_VALUE );
       if( ( len <= 0 ) || scan_fixed_int( write_ptr, len, &numwant ) ) HTTPERROR_400_PARAM;
+#ifdef WANT_I2P
+      if( numwant < 0 ) numwant = 4;
+      if( numwant > 16 ) numwant = 16;
+#else
       if( numwant < 0 ) numwant = 50;
       if( numwant > 200 ) numwant = 200;
+#endif
       break;
     case 5: /* matched "compact" */
       len = scan_urlencoded_query( &read_ptr, write_ptr = read_ptr, SCAN_SEARCHPATH_VALUE );
-      if( ( len <= 0 ) || scan_fixed_int( write_ptr, len, &tmp ) ) HTTPERROR_400_PARAM;
-      if( !tmp ) HTTPERROR_400_COMPACT;
+      if( ( len <= 0 ) || scan_fixed_int( write_ptr, len, &compact ) ) HTTPERROR_400_PARAM;
+      if( !compact ) {
+        HTTPERROR_400_COMPACT;
+      } else {
+        ws->compact = true;
+      }
       break;
     case 6: /* matched "info_hash" */
       if( ws->hash ) HTTPERROR_400_DOUBLEHASH;
@@ -483,11 +501,37 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
 #ifdef WANT_IP_FROM_QUERY_STRING
     case  7: /* matched "ip" */
       {
+#ifdef WANT_I2P
+        int SUFFIXLEN = 4; // clients sending ip field as base64 with ".i2p" ending
+        char subbuff[SUFFIXLEN+1];
+
+        len = scan_urlencoded_query( &read_ptr, write_ptr = read_ptr, SCAN_SEARCHPATH_VALUE );
+        memcpy( subbuff, &write_ptr[len-SUFFIXLEN], SUFFIXLEN );
+        subbuff[SUFFIXLEN] = '\0';
+
+        if( len <= 0 || strcmp(subbuff, ".i2p") != 0 ) HTTPERROR_400_PARAM;
+
+        unsigned char bhash[32];
+        int blen = 0;
+        SHA256_CTX bctx;
+
+        write_ptr[len-SUFFIXLEN] = '\0'; // strip .i2p ending
+
+        unsigned char * bdata = unbase64((char*)write_ptr, len-SUFFIXLEN, &blen);
+
+        sha256_init( &bctx );
+        sha256_update( &bctx, bdata, blen );
+        sha256_final( &bctx, bhash );
+
+        OT_SETIP( &ws->peer, (char*)bhash, OT_B32_SIZE );
+        free( bdata );
+#else
         char *tmp_buf1 = ws->reply, *tmp_buf2 = ws->reply+16;
         len = scan_urlencoded_query( &read_ptr, tmp_buf2, SCAN_SEARCHPATH_VALUE );
         tmp_buf2[len] = 0;
         if( ( len <= 0 ) || !scan_ip6( tmp_buf2, tmp_buf1 ) ) HTTPERROR_400_PARAM;
         OT_SETIP( &ws->peer, tmp_buf1 );
+#endif
       }
       break;
 #endif
@@ -512,7 +556,7 @@ static ssize_t http_handle_announce( const int64 sock, struct ot_workstruct *ws,
             bits = 128;
           else {
             parsed = scan_short( tmp_buf + parsed, &bits );
-            if( !parsed ) HTTPERROR_400_PARAM; 
+            if( !parsed ) HTTPERROR_400_PARAM;
             if( ip6_isv4mapped( net.address ) )
               bits += 96;
           }
